@@ -9459,5 +9459,152 @@ function App() {
 
 ReactDOM.render(<App/>, document.getElementById('root'));
 </script>
+<!-- RSG deep-link reader v2 -->
+<script>
+(function () {
+  'use strict';
+
+  function params() {
+    var out = {};
+    String(location.hash || '').replace(/^#/, '').split('&').forEach(function (pair) {
+      if (!pair) return;
+      var i = pair.indexOf('=');
+      var k = i < 0 ? pair : pair.slice(0, i);
+      var v = i < 0 ? '' : pair.slice(i + 1);
+      try { out[k] = decodeURIComponent(v.replace(/\+/g, ' ')); } catch (e) { out[k] = v; }
+    });
+    return out;
+  }
+
+  function whenReady(sel, cb, tries) {
+    tries = tries == null ? 80 : tries;
+    var els = document.querySelectorAll(sel);
+    if (els.length) return cb(els);
+    if (tries <= 0) return cb(null);
+    setTimeout(function () { whenReady(sel, cb, tries - 1); }, 100);
+  }
+
+  function isOn(el) { return /(^|\s)on(\s|$)/.test((el && el.className) || ''); }
+  function txt(el) { return ((el && el.textContent) || '').replace(/\s+/g, ' ').trim(); }
+  function norm(s) { return String(s || '').toLowerCase().replace(/[^a-z0-9]/g, ''); }
+
+  function selectGame(idx, done, attempt) {
+    attempt = attempt || 0;
+    if (!document.querySelector('.gbtn')) {
+      var opener = document.querySelector('.gswitch-btn, .gswitch, [data-gswitch]');
+      if (opener) opener.click();
+    }
+    whenReady('.gbtn', function (btns) {
+      if (!btns || !btns[idx]) return done();
+      if (isOn(btns[idx]) || attempt >= 6) return setTimeout(done, 260);
+      btns[idx].click();
+      setTimeout(function () {
+        var now = document.querySelectorAll('.gbtn');
+        if (now[idx] && isOn(now[idx])) return setTimeout(done, 260);
+        selectGame(idx, done, attempt + 1);
+      }, 180 + attempt * 120);
+    });
+  }
+
+  function clickByText(label, done, attempt) {
+    attempt = attempt || 0;
+    var want = norm(label);
+    if (!want) return done();
+    var all = document.querySelectorAll('button, .tb, [role="tab"]');
+    var hit = null;
+    Array.prototype.forEach.call(all, function (el) {
+      if (!hit && norm(txt(el)) === want) hit = el;
+    });
+    if (!hit) {
+      Array.prototype.forEach.call(all, function (el) {
+        if (!hit && norm(txt(el)).indexOf(want) === 0) hit = el;
+      });
+    }
+    if (!hit) {
+      return attempt < 8
+        ? setTimeout(function () { clickByText(label, done, attempt + 1); }, 150)
+        : done();
+    }
+    if (isOn(hit)) return setTimeout(done, 200);
+    hit.click();
+    setTimeout(function () {
+      if (attempt < 4) return clickByText(label, done, attempt + 1);
+      done();
+    }, 200);
+  }
+
+  function selectTeam(name, done) {
+    var want = norm(name);
+    if (!want) return done();
+    var pick = null;
+    Array.prototype.forEach.call(
+      document.querySelectorAll('button, .tb, [role="tab"], .tsel, .tbtn, select option'),
+      function (el) { if (!pick && norm(txt(el)) === want) pick = el; }
+    );
+    if (pick) {
+      if (pick.tagName === 'OPTION') {
+        var sel = pick.parentNode;
+        sel.value = pick.value;
+        sel.dispatchEvent(new Event('change', { bubbles: true }));
+      } else if (!isOn(pick)) {
+        pick.click();
+      }
+      return setTimeout(done, 240);
+    }
+    var seen = null;
+    Array.prototype.forEach.call(document.querySelectorAll('h1,h2,h3,h4,td,th,div,span'), function (el) {
+      if (seen || el.children.length) return;
+      if (norm(txt(el)) === want) seen = el;
+    });
+    if (seen && seen.scrollIntoView) seen.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    done();
+  }
+
+  function openPlayer(name, attempt) {
+    attempt = attempt || 0;
+    var want = norm(name);
+    if (!want) return;
+    var hit = null;
+    Array.prototype.forEach.call(
+      document.querySelectorAll('td, .pn, .pname, button, a, span, div'),
+      function (el) {
+        if (hit || el.children.length > 1) return;
+        if (norm(txt(el)) === want) hit = el;
+      }
+    );
+    if (!hit && attempt < 14) {
+      return setTimeout(function () { openPlayer(name, attempt + 1); }, 220);
+    }
+    if (!hit) return;
+    var click = hit.closest ? (hit.closest('tr') || hit.closest('button') || hit) : hit;
+    if (click.scrollIntoView) click.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    click.click();
+  }
+
+  function run() {
+    var p = params();
+    if (!p.game && !p.player && !p.tab && !p.team) return;
+    var gi = (p.game == null || p.game === '') ? null : parseInt(p.game, 10);
+
+    var afterGame = function () {
+      clickByText(p.tab || '', function () {
+        selectTeam(p.team || '', function () {
+          if (p.player) openPlayer(p.player);
+        });
+      });
+    };
+
+    if (gi != null && !isNaN(gi)) selectGame(gi, afterGame);
+    else afterGame();
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', function () { setTimeout(run, 400); });
+  } else {
+    setTimeout(run, 400);
+  }
+  window.addEventListener('hashchange', function () { setTimeout(run, 120); });
+})();
+</script>
 </body>
 </html>
