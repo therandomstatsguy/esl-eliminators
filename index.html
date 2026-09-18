@@ -42,8 +42,8 @@ body{font-family:'Inter',system-ui,sans-serif;background:var(--bg0);color:var(--
 .cr{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:12px;justify-content:center}
 .cr.left{justify-content:flex-start}
 .cl{font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:1px;font-weight:600}
-.tg{display:flex;gap:2px;flex-wrap:wrap}
-.tb{background:var(--bg2);border:1px solid var(--brd);color:var(--t2);padding:4px 8px;border-radius:5px;cursor:pointer;font-size:10px;font-weight:500;transition:all .2s;font-family:inherit;white-space:nowrap}
+.tg{display:flex;gap:2px;flex-wrap:wrap;flex:1}
+.tb{background:var(--bg2);border:1px solid var(--brd);color:var(--t2);padding:4px 8px;border-radius:5px;cursor:pointer;font-size:10px;font-weight:500;transition:all .2s;font-family:inherit;white-space:nowrap;flex:1;text-align:center}
 .tb:hover{border-color:var(--acc);color:var(--t1)}
 .tb.on{background:rgba(0,212,160,.15);border-color:var(--acc);color:var(--accB)}
 
@@ -8144,12 +8144,12 @@ function TeamStats({game}) {
           </div>
 
           <div className="ts-hdr" style={{background:`linear-gradient(90deg, ${displayCol(game.t1)}44 0%, transparent 40%, transparent 60%, ${displayCol(game.t2)}44 100%)`,borderRadius:10,padding:'8px 12px'}}>
-            <div className="ts-tn l" style={{display:'flex',alignItems:'center',justifyContent:'flex-end',gap:6}}>
+            <div className="ts-tn l" style={{display:'flex',alignItems:'center',justifyContent:'flex-start',gap:6}}>
               {clubLogo(game.t1)?<img src={clubLogo(game.t1)} style={{width:22,height:22,objectFit:'contain',...logoStyle(game.t1)}}/>:null}
               <span style={{color:'#fff',fontWeight:800}}>{game.t1}</span>
             </div>
             <div className="ts-tn c">STAT</div>
-            <div className="ts-tn r" style={{display:'flex',alignItems:'center',gap:6}}>
+            <div className="ts-tn r" style={{display:'flex',alignItems:'center',gap:6,justifyContent:'flex-end'}}>
               <span style={{color:'#fff',fontWeight:800}}>{game.t2}</span>
               {clubLogo(game.t2)?<img src={clubLogo(game.t2)} style={{width:22,height:22,objectFit:'contain',...logoStyle(game.t2)}}/>:null}
             </div>
@@ -8214,6 +8214,13 @@ function PPRow({label,games,initOpen,timeFilter,triesFilter}){
   const sorted = useMemo(() => [...games].sort((a,b) => parseDate(b.dt) - parseDate(a.dt)), [games]);
   const tot=games.length;
   const triesMin = triesFilter || 1;
+  const totalTries = useMemo(() => {
+    return games.reduce((s,g) => {
+      if(timeFilter==='first') return s+(g.ft==='Yes'?g.t:0);
+      if(timeFilter==='last') return s+(g.lt==='Yes'?g.t:0);
+      return s+g.t;
+    }, 0);
+  }, [games, timeFilter]);
   const scored = useMemo(() => {
     return games.filter(g => {
       if(timeFilter==='first') return g.ft==='Yes' && g.t>=triesMin;
@@ -8229,7 +8236,7 @@ function PPRow({label,games,initOpen,timeFilter,triesFilter}){
       <div onClick={()=>setOpen(!open)} style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'8px 12px',background:'var(--bg3)',borderRadius:8,cursor:'pointer',borderLeft:'3px solid '+pctCol}}>
         <span style={{fontSize:12,fontWeight:600,color:'var(--t1)',flex:1}}>{label}</span>
         <div style={{display:'flex',alignItems:'center',gap:12}}>
-          <span style={{fontSize:11,color:'var(--t2)'}}>{scored}/{tot} ({triesMin}+ tries)</span>
+          <span style={{fontSize:11,color:'var(--t2)'}}>{totalTries} tries in {tot} games</span>
           <span style={{fontSize:14,fontWeight:800,color:pctCol,minWidth:42,textAlign:'right'}}>{pct}%</span>
           <span style={{fontSize:10,color:'var(--t3)',transform:open?'rotate(180deg)':'',transition:'transform 0.2s'}}>▼</span>
         </div>
@@ -8261,6 +8268,13 @@ function PPPvRow({label,games,initOpen,timeFilter,triesFilter}){
   const [open,setOpen]=useState(initOpen||false);
   const tot=games.length;
   const triesMin = triesFilter || 1;
+  const totalTries = useMemo(() => {
+    return games.reduce((s,g) => {
+      if(timeFilter==='first') return s+(g.ft==='Yes'?g.t:0);
+      if(timeFilter==='last') return s+(g.lt==='Yes'?g.t:0);
+      return s+g.t;
+    }, 0);
+  }, [games, timeFilter]);
   const scored = useMemo(() => {
     return games.filter(g => {
       if(timeFilter==='first') return g.ft==='Yes' && g.t>=triesMin;
@@ -8276,7 +8290,7 @@ function PPPvRow({label,games,initOpen,timeFilter,triesFilter}){
       <div onClick={()=>setOpen(!open)} style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'8px 12px',background:'var(--bg3)',borderRadius:8,cursor:'pointer',borderLeft:'3px solid '+pctCol}}>
         <span style={{fontSize:12,fontWeight:600,color:'var(--t1)',flex:1}}>{label}</span>
         <div style={{display:'flex',alignItems:'center',gap:12}}>
-          <span style={{fontSize:11,color:'var(--t2)'}}>{scored}/{tot} ({triesMin}+ tries)</span>
+          <span style={{fontSize:11,color:'var(--t2)'}}>{totalTries} tries in {tot} games</span>
           <span style={{fontSize:14,fontWeight:800,color:pctCol,minWidth:42,textAlign:'right'}}>{pct}%</span>
           <span style={{fontSize:10,color:'var(--t3)',transform:open?'rotate(180deg)':'',transition:'transform 0.2s'}}>▼</span>
         </div>
@@ -8325,7 +8339,7 @@ function getOpponent(pos, teamKey, oppKey, game) {
 }
 
 // PlayerProfile popup component
-function PlayerProfile({player,teamKey,oppKey,game,initMode,onClose}){
+function PlayerProfile({player,teamKey,oppKey,game,initMode,initPeriod,initTime,onClose}){
   const pn=player.pl;
   const pos=player.pos;
   const col=displayCol(teamKey);
@@ -8360,8 +8374,8 @@ function PlayerProfile({player,teamKey,oppKey,game,initMode,onClose}){
     return {games, tries: conceded};
   }, [oppPlayer, teamKey, game]);
 
-  const [ppPer,setPPPer]=useState('all');
-  const [ppTime,setPPTime]=useState('all');
+  const [ppPer,setPPPer]=useState(initPeriod||'all');
+  const [ppTime,setPPTime]=useState(initTime||'all');
   const [ppTries,setPPTries]=useState(1);
   const [hmOpen, setHmOpen]=useState(false);
   const fb=(active)=>({fontSize:9,padding:'2px 6px',borderRadius:4,border:'1px solid '+(active?'var(--acc)':'var(--brd)'),background:active?'var(--acc)':'var(--bg3)',color:active?'#000':'var(--t2)',cursor:'pointer',fontWeight:active?700:400});
@@ -8583,14 +8597,12 @@ function PlayerProfile({player,teamKey,oppKey,game,initMode,onClose}){
                   <span key={v} style={fb(ppPer===v)} onClick={()=>setPPPer(v)}>{l}</span>
                 ))}
               </div>
-              <div style={{display:'flex',alignItems:'center',gap:4,flexWrap:'wrap',marginBottom:4}}>
+              <div style={{display:'flex',alignItems:'center',gap:4,flexWrap:'wrap'}}>
                 <span style={{fontSize:9,fontWeight:700,color:'var(--t3)',width:42}}>TIME</span>
                 {[['all','All'],['first','First'],['last','Last']].map(([v,l])=>(
                   <span key={v} style={fb(ppTime===v)} onClick={()=>setPPTime(v)}>{l}</span>
                 ))}
-              </div>
-              <div style={{display:'flex',alignItems:'center',gap:4,flexWrap:'wrap'}}>
-                <span style={{fontSize:9,fontWeight:700,color:'var(--t3)',width:42}}>TRIES</span>
+                <span style={{fontSize:9,fontWeight:700,color:'var(--t3)',marginLeft:8}}>TRIES</span>
                 {[[1,'1+'],[2,'2+'],[3,'3+']].map(([v,l])=>(
                   <span key={v} style={fb(ppTries===v)} onClick={()=>setPPTries(v)}>{l}</span>
                 ))}
@@ -8913,15 +8925,15 @@ function TLS({game, srMode, srPeriod, srTryTime, srSort, onSrSortChange}) {
 
   return (
     <div className="mc">
-      {ppPlayer && <PlayerProfile player={{pl:ppPlayer.player, pos:ppPlayer.pos}} teamKey={ppPlayer.teamKey} oppKey={ppPlayer.oppKey} game={game} initMode={srMode} onClose={()=>setPpPlayer(null)}/>}
+      {ppPlayer && <PlayerProfile player={{pl:ppPlayer.player, pos:ppPlayer.pos}} teamKey={ppPlayer.teamKey} oppKey={ppPlayer.oppKey} game={game} initMode={srMode} initPeriod={srPeriod} initTime={srTryTime} onClose={()=>setPpPlayer(null)}/>}
 
       <div className="mh" style={{background:`linear-gradient(90deg, ${displayCol(game.t1)}44 0%, transparent 40%, transparent 60%, ${displayCol(game.t2)}44 100%)`,borderRadius:10,padding:'8px 12px'}}>
-        <div className="mht" style={{color:'#ffffff',display:'flex',alignItems:'center',gap:6,justifyContent:'flex-end'}}>
+        <div className="mht" style={{color:'#ffffff',display:'flex',alignItems:'center',gap:6,justifyContent:'flex-start'}}>
           {clubLogo(game.t1)?<img src={clubLogo(game.t1)} style={{width:22,height:22,objectFit:'contain',...logoStyle(game.t1)}}/>:null}
           {game.t1}
         </div>
         <div className="mhv">VS</div>
-        <div className="mht r" style={{color:'#ffffff',display:'flex',alignItems:'center',gap:6}}>
+        <div className="mht r" style={{color:'#ffffff',display:'flex',alignItems:'center',gap:6,justifyContent:'flex-end'}}>
           {game.t2}
           {clubLogo(game.t2)?<img src={clubLogo(game.t2)} style={{width:22,height:22,objectFit:'contain',...logoStyle(game.t2)}}/>:null}
         </div>
@@ -8995,321 +9007,281 @@ function TopMarkets({game, mode, onPlayerClick}) {
   const [selectedTile, setSelectedTile] = useState(null);
 
   const tiles = useMemo(() => {
-    const result = [];
-    const opp = {[game.t1]: game.t2, [game.t2]: game.t1};
+    const all = [];
+    const oppMap = {[game.t1]:game.t2,[game.t2]:game.t1};
 
-    // Helper: count active consecutive try-scoring streak from most recent game backwards
-    function activePlayerStreak(games) {
-      let streak = 0;
-      for (let i = games.length - 1; i >= 0; i--) {
-        if (games[i].t > 0) streak++;
-        else break;
+    // Home venues for "at venue" filtering
+    const HV={'Wakefield Trinity':'DIY Kitchens','Leigh':'Progress','Warrington':'Halliwell Jones','Hull KR':'Craven Park','Wigan':'Brick Community','Huddersfield':'Accu','Leeds':'AMT Headingley','Hull FC':'MKM','Castleford':'OneBore','St Helens':'Brewdog','Catalans':'Gilbert Brutus','Toulouse':'Ernest Wallon','Salford':'Salford','London':'Cherry Red','Bradford':'Bartercard Odsal','York':'LNER'};
+
+    // Day/night from kickoff
+    function dayKO(ko){var m=(ko||'').match(/(\d+):(\d+)\s*(AM|PM)/i);if(!m)return true;var h=parseInt(m[1]);if(m[3].toUpperCase()==='PM'&&h!==12)h+=12;if(m[3].toUpperCase()==='AM'&&h===12)h=0;return h<17||(h===17&&parseInt(m[2])===0);}
+    var gameIsDay=dayKO(game.ko);
+
+    // Finals detection
+    function fin(r){return /final|semi|play-off|eliminat/i.test(r||'');}
+
+    // Position aliases for historical matching
+    var PA={'Left Wing':['Left Wing','Wing'],'Right Wing':['Right Wing','Wing'],'Left Centre':['Left Centre','Centre'],'Right Centre':['Right Centre','Centre'],'Left Half':['Left Half','Five-Eighth'],'Right Half':['Right Half','Halfback'],'Left 2nd Row':['Left 2nd Row','Second Row'],'Right 2nd Row':['Right 2nd Row','Second Row']};
+
+    // RESULTS lookup by team+date
+    var RL={};
+    RESULTS.forEach(function(r){RL[r.t1+'|'+r.dt]=r;RL[r.t2+'|'+r.dt]=r;});
+
+    // bestXY: games[0]=most recent. Returns {x,y,pf} or null
+    function bestXY(games,hit,min){
+      min=min||3;var my=Math.min(games.length,20);
+      var c=0;for(var i=0;i<my;i++){if(hit(games[i]))c++;else break;}
+      if(c>=min)return{x:c,y:c,pf:true};
+      for(var y=my;y>=min;y--){
+        var x=0;for(var i=0;i<y;i++){if(hit(games[i]))x++;}
+        if(x>=min&&x>=y-1)return{x:x,y:y,pf:x===y};
       }
-      return streak;
+      return null;
     }
 
-    // Helper: active consecutive try streak for position vs opponent from tryscorer data
-    function activePosVsOppStreak(pos, oppKey) {
-      const allRounds = [...new Set(TRY_RECS.filter(r => r.op === oppKey).map(r => r.r))].sort((a,b) => a-b);
-      let streak = 0;
-      for (let i = allRounds.length - 1; i >= 0; i--) {
-        const rd = allRounds[i];
-        const hasTry = TRY_RECS.some(r => r.p === pos && r.op === oppKey && r.r === rd);
-        if (hasTry) streak++;
-        else break;
-      }
-      return streak;
-    }
+    // ===================== PLAYER STREAKS =====================
+    var players=[];
+    (TLISTS[game.t1]||[]).forEach(function(p){players.push({pl:p.pl,pos:p.pos,team:game.t1});});
+    (TLISTS[game.t2]||[]).forEach(function(p){players.push({pl:p.pl,pos:p.pos,team:game.t2});});
 
-    // Player tryscorer streaks (3+ active consecutive games)
-    const allPlayers = [
-      ...(TLISTS[game.t1] || []).map(p => ({...p, team: game.t1})),
-      ...(TLISTS[game.t2] || []).map(p => ({...p, team: game.t2}))
-    ];
+    players.forEach(function(pl){
+      var raw=PGAMES[pl.pl];if(!raw||raw.length<3)return;
+      var opp=oppMap[pl.team];
+      var odds=TRYSCORER_ODDS[pl.pl]||null;
+      var aliases=PA[pl.pos]||[pl.pos];
 
-    allPlayers.forEach(player => {
-      const games = PGAMES[player.pl] || [];
-      const oppKey = opp[player.team];
-
-      const plOdds = TRYSCORER_ODDS[player.pl] || null;
-
-      // All Games streak
-      const allStreak = activePlayerStreak(games);
-      if (allStreak >= 3) {
-        result.push({
-          type: 'tryscorer', name: player.pl, stat: allStreak,
-          label: 'Anytime Try', context: `${allStreak} consecutive games with a try`,
-          team: player.team, id: `ts_all_${player.pl}`,
-          games: games.slice(-10).reverse(), streakLen: allStreak, odds: plOdds
+      // Annotate & reverse (most recent first)
+      var gs=raw.slice().reverse().map(function(g){
+        var r=RL[g.tm+'|'+g.dt];
+        var isT1=r?r.t1===g.tm:false;
+        return Object.assign({},g,{
+          ha:r?(isT1?r.ha1:r.ha2):(g.v===HV[g.tm]?'H':'A'),
+          isFav:r?r.fav===g.tm:false,
+          isUnd:r?(r.fav&&r.fav!==g.tm):false,
+          isFin:r?fin(r.r):false,
+          isDay:dayKO(g.ko)
         });
-      }
+      });
 
-      // H2H streak
-      const h2hGames = games.filter(g => g.o === oppKey);
-      const h2hStreak = activePlayerStreak(h2hGames);
-      if (h2hStreak >= 3) {
-        result.push({
-          type: 'tryscorer', name: player.pl, stat: h2hStreak,
-          label: 'Anytime Try', context: `${h2hStreak} in a row vs ${abbr(oppKey)}`,
-          team: player.team, id: `ts_h2h_${player.pl}`,
-          games: h2hGames.slice(-10).reverse(), streakLen: h2hStreak, odds: plOdds
-        });
-      }
+      // Player contexts
+      var ctxs=[
+        {k:'all',l:'games',g:gs,gr:'A'},
+        {k:'home',l:'home games',g:gs.filter(function(x){return x.ha==='H';}),gr:'A'},
+        {k:'away',l:'away games',g:gs.filter(function(x){return x.ha==='A';}),gr:'A'},
+        {k:'vsOpp',l:'games vs '+opp,g:gs.filter(function(x){return x.o===opp;}),gr:'A'},
+        {k:'posVsOpp',l:'games as '+pl.pos+' vs '+opp,g:gs.filter(function(x){return x.o===opp&&aliases.includes(x.p);}),gr:'A'},
+        {k:'finals',l:'finals',g:gs.filter(function(x){return x.isFin;}),gr:'B'},
+        {k:'fav',l:'games as favourite',g:gs.filter(function(x){return x.isFav;}),gr:'B'},
+        {k:'und',l:'games as underdog',g:gs.filter(function(x){return x.isUnd;}),gr:'B'}
+      ];
+      if(game.v&&HV[pl.team]!==game.v)ctxs.push({k:'venue',l:'games at '+game.v,g:gs.filter(function(x){return x.v===game.v;}),gr:'B'});
+      if(gameIsDay)ctxs.push({k:'day',l:'day games',g:gs.filter(function(x){return x.isDay;}),gr:'B'});
+      else ctxs.push({k:'night',l:'night games',g:gs.filter(function(x){return !x.isDay;}),gr:'B'});
 
-      // Venue streak
-      const venueGames = games.filter(g => g.v === game.v);
-      const venueStreak = activePlayerStreak(venueGames);
-      if (venueStreak >= 3) {
-        result.push({
-          type: 'tryscorer', name: player.pl, stat: venueStreak,
-          label: 'Anytime Try', context: `${venueStreak} in a row at ${game.v}`,
-          team: player.team, id: `ts_ven_${player.pl}`,
-          games: venueGames.slice(-10).reverse(), streakLen: venueStreak, odds: plOdds
+      ctxs.forEach(function(ctx){
+        if(ctx.g.length<3)return;
+        var b=bestXY(ctx.g,function(x){return x.t>0;},3);
+        if(!b)return;
+        var desc=b.pf
+          ?'Scored in each of his last '+b.x+' '+ctx.l
+          :'Scored in '+b.x+' of his last '+b.y+' '+ctx.l;
+        all.push({
+          tp:'player',nm:pl.pl,tm:pl.team,pos:pl.pos,
+          x:b.x,y:b.y,pf:b.pf,
+          mg:'try',ck:ctx.k,cg:ctx.gr,
+          lb:'Anytime Try',desc:desc,
+          odds:odds,gs:ctx.g.slice(0,10),
+          id:'p_'+ctx.k+'_'+pl.pl
         });
-      }
-
-      // Pos vs Opp streak (player-specific: this player at this position vs opponent)
-      const pvoGames = games.filter(g => g.o === oppKey && g.p === player.pos);
-      const pvoStreak = activePlayerStreak(pvoGames);
-      if (pvoStreak >= 3) {
-        result.push({
-          type: 'tryscorer', name: player.pl, stat: pvoStreak,
-          label: 'Anytime Try', context: `${pvoStreak} in a row as ${player.pos} vs ${abbr(oppKey)}`,
-          team: player.team, id: `ts_pvo_${player.pl}_${oppKey}`,
-          games: pvoGames.slice(-10).reverse(), streakLen: pvoStreak, odds: plOdds
-        });
-      }
+      });
     });
 
-    // Team win/loss active streaks (5+ games)
-    function activeTeamStreak(filteredGames, team) {
-      let winStreak = 0, lossStreak = 0;
-      for (let i = filteredGames.length - 1; i >= 0; i--) {
-        const g = filteredGames[i];
-        const isT1 = g.t1 === team;
-        const scored = isT1 ? g.s1 : g.s2;
-        const conc = isT1 ? g.s2 : g.s1;
-        if (scored > conc) {
-          if (lossStreak > 0) break;
-          winStreak++;
-        } else if (scored < conc) {
-          if (winStreak > 0) break;
-          lossStreak++;
-        } else { break; }
-      }
-      return {winStreak, lossStreak};
-    }
+    // ===================== TEAM STREAKS =====================
+    [game.t1,game.t2].forEach(function(team){
+      var opp=oppMap[team];
+      var isHomeTm=team===game.t1;
+      var raw=RESULTS.filter(function(r){return r.t1===team||r.t2===team;});
 
-    // Team covers/misses line streak (3+ games, 2026 data only)
-    function activeLineStreak(filteredGames, team) {
-      const withLine = filteredGames.filter(g => g.lh > 0);
-      let coversStreak = 0, missStreak = 0;
-      for (let i = withLine.length - 1; i >= 0; i--) {
-        const g = withLine[i];
-        const isT1 = g.t1 === team;
-        const margin = (isT1 ? g.s1 : g.s2) - (isT1 ? g.s2 : g.s1);
-        const isFav = g.fav === team;
-        const covers = isFav ? margin > g.lh : margin > -g.lh;
-        if (covers) {
-          if (missStreak > 0) break;
-          coversStreak++;
-        } else {
-          if (coversStreak > 0) break;
-          missStreak++;
+      // Annotate & reverse (most recent first)
+      var gs=raw.slice().reverse().map(function(r){
+        var isT1=r.t1===team;
+        var sc=isT1?r.s1:r.s2;var cc=isT1?r.s2:r.s1;
+        return Object.assign({},r,{
+          ha:isT1?r.ha1:r.ha2,
+          sc:sc,cc:cc,mg:sc-cc,
+          isFav:r.fav===team,isUnd:r.fav&&r.fav!==team,
+          isFin:fin(r.r),isDay:dayKO(r.ko),
+          oppG:isT1?r.t2:r.t1
+        });
+      });
+
+      // Team contexts
+      var ctxs=[
+        {k:'all',l:'games',g:gs,gr:'A'},
+        {k:'home',l:'home games',g:gs.filter(function(x){return x.ha==='H';}),gr:'A'},
+        {k:'away',l:'away games',g:gs.filter(function(x){return x.ha==='A';}),gr:'A'},
+        {k:'vsOpp',l:'games vs '+abbr(opp),g:gs.filter(function(x){return x.oppG===opp;}),gr:'A'},
+        {k:'homeVsOpp',l:'home games vs '+abbr(opp),g:gs.filter(function(x){return x.ha==='H'&&x.oppG===opp;}),gr:'B'},
+        {k:'awayVsOpp',l:'away games vs '+abbr(opp),g:gs.filter(function(x){return x.ha==='A'&&x.oppG===opp;}),gr:'B'},
+        {k:'finals',l:'finals',g:gs.filter(function(x){return x.isFin;}),gr:'B'},
+        {k:'fav',l:'games as favourite',g:gs.filter(function(x){return x.isFav;}),gr:'B'},
+        {k:'und',l:'games as underdog',g:gs.filter(function(x){return x.isUnd;}),gr:'B'},
+        {k:'homeUnd',l:'home games as underdog',g:gs.filter(function(x){return x.ha==='H'&&x.isUnd;}),gr:'B'},
+        {k:'awayUnd',l:'away games as underdog',g:gs.filter(function(x){return x.ha==='A'&&x.isUnd;}),gr:'B'}
+      ];
+      if(game.v&&HV[team]!==game.v)ctxs.push({k:'venue',l:'games at '+game.v,g:gs.filter(function(x){return x.v===game.v;}),gr:'B'});
+      if(gameIsDay)ctxs.push({k:'day',l:'day games',g:gs.filter(function(x){return x.isDay;}),gr:'B'});
+      else ctxs.push({k:'night',l:'night games',g:gs.filter(function(x){return !x.isDay;}),gr:'B'});
+
+      var isH2H=function(k){return k==='vsOpp'||k==='homeVsOpp'||k==='awayVsOpp';};
+      var teamOdds=team===game.t1?game.o1:game.o2;
+
+      ctxs.forEach(function(ctx){
+        if(ctx.g.length<3)return;
+        var h2h=isH2H(ctx.k);
+
+        // Win
+        var w=bestXY(ctx.g,function(x){return x.sc>x.cc;},3);
+        if(w){
+          var d=w.pf?team+' have won their last '+w.x+' '+ctx.l:team+' have won '+w.x+' of their last '+w.y+' '+ctx.l;
+          all.push({tp:'team',nm:team,tm:team,x:w.x,y:w.y,pf:w.pf,mg:'wl',ck:ctx.k,cg:ctx.gr,lb:'H2H',st:'win',desc:d,odds:teamOdds,gs:ctx.g.slice(0,10),id:'tw_'+ctx.k+'_'+team});
         }
-      }
-      return {coversStreak, missStreak, games: withLine};
-    }
-
-    // Total points over/under streak (3+ games, 2026 data only)
-    function activeTotalStreak(filteredGames) {
-      const withPts = filteredGames.filter(g => g.ph > 0);
-      let overStreak = 0, underStreak = 0;
-      for (let i = withPts.length - 1; i >= 0; i--) {
-        const g = withPts[i];
-        const tp = g.s1 + g.s2;
-        if (tp > g.ph) {
-          if (underStreak > 0) break;
-          overStreak++;
-        } else {
-          if (overStreak > 0) break;
-          underStreak++;
+        // Loss (skip in H2H — only show winner)
+        if(!h2h){
+          var lo=bestXY(ctx.g,function(x){return x.sc<x.cc;},3);
+          if(lo){
+            var d2=lo.pf?team+' have lost their last '+lo.x+' '+ctx.l:team+' have lost '+lo.x+' of their last '+lo.y+' '+ctx.l;
+            all.push({tp:'team',nm:team,tm:team,x:lo.x,y:lo.y,pf:lo.pf,mg:'wl',ck:ctx.k,cg:ctx.gr,lb:'H2H',st:'loss',desc:d2,odds:teamOdds,gs:ctx.g.slice(0,10),id:'tl_'+ctx.k+'_'+team});
+          }
         }
-      }
-      return {overStreak, underStreak, games: withPts};
-    }
 
-    [game.t1, game.t2].forEach(team => {
-      const oppKey = opp[team];
-      const allGames = RESULTS.filter(r => r.t1 === team || r.t2 === team);
+        // Line — only games with line data
+        if(game.lh>0){
+          var lg=ctx.g.filter(function(x){return x.lh>0;});
+          if(lg.length>=3){
+            // Cover
+            var cv=bestXY(lg,function(x){return x.isFav?x.mg>x.lh:x.mg>-x.lh;},3);
+            if(cv){
+              var lt=game.fav===team?'-'+game.lh:'+'+game.lh;
+              var d3=cv.pf?team+' have covered a '+lt+' line in their last '+cv.x+' '+ctx.l:team+' have covered a '+lt+' line in '+cv.x+' of their last '+cv.y+' '+ctx.l;
+              all.push({tp:'team',nm:team,tm:team,x:cv.x,y:cv.y,pf:cv.pf,mg:'line',ck:ctx.k,cg:ctx.gr,lb:'Line',st:'cover',desc:d3,odds:teamOdds,gs:lg.slice(0,10),id:'tc_'+ctx.k+'_'+team});
+            }
+            // Fail (skip in H2H — only show team covering)
+            if(!h2h){
+              var fl=bestXY(lg,function(x){return x.isFav?x.mg<=x.lh:x.mg<=-x.lh;},3);
+              if(fl){
+                var lt2=game.fav===team?'-'+game.lh:'+'+game.lh;
+                var d4=fl.pf?team+' have failed to cover a '+lt2+' line in their last '+fl.x+' '+ctx.l:team+' have failed to cover a '+lt2+' line in '+fl.x+' of their last '+fl.y+' '+ctx.l;
+                all.push({tp:'team',nm:team,tm:team,x:fl.x,y:fl.y,pf:fl.pf,mg:'line',ck:ctx.k,cg:ctx.gr,lb:'Line',st:'fail',desc:d4,odds:teamOdds,gs:lg.slice(0,10),id:'tf_'+ctx.k+'_'+team});
+              }
+            }
+          }
+        }
 
-      // All Games
-      const allS = activeTeamStreak(allGames, team);
-      if (allS.winStreak >= 5) result.push({type:'streak',name:team,stat:allS.winStreak,label:'Win Streak',context:'All Games',team,id:`ws_all_${team}`,games:allGames.slice(-10).reverse(),streakLen:allS.winStreak});
-      if (allS.lossStreak >= 5) result.push({type:'streak',name:team,stat:allS.lossStreak,label:'Loss Streak',context:'All Games',team,id:`ls_all_${team}`,games:allGames.slice(-10).reverse(),streakLen:allS.lossStreak});
-
-      // H2H
-      const h2hG = RESULTS.filter(r => (r.t1===team && r.t2===oppKey) || (r.t1===oppKey && r.t2===team));
-      const h2hS = activeTeamStreak(h2hG, team);
-      if (h2hS.winStreak >= 5) result.push({type:'streak',name:team,stat:h2hS.winStreak,label:'Win Streak',context:`H2H vs ${abbr(oppKey)}`,team,id:`ws_h2h_${team}`,games:h2hG.slice(-10).reverse(),streakLen:h2hS.winStreak});
-      if (h2hS.lossStreak >= 5) result.push({type:'streak',name:team,stat:h2hS.lossStreak,label:'Loss Streak',context:`H2H vs ${abbr(oppKey)}`,team,id:`ls_h2h_${team}`,games:h2hG.slice(-10).reverse(),streakLen:h2hS.lossStreak});
-
-      // Venue
-      const venG = allGames.filter(r => r.v === game.v);
-      const venS = activeTeamStreak(venG, team);
-      if (venS.winStreak >= 5) result.push({type:'streak',name:team,stat:venS.winStreak,label:'Win Streak',context:`At ${game.v}`,team,id:`ws_ven_${team}`,games:venG.slice(-10).reverse(),streakLen:venS.winStreak});
-      if (venS.lossStreak >= 5) result.push({type:'streak',name:team,stat:venS.lossStreak,label:'Loss Streak',context:`At ${game.v}`,team,id:`ls_ven_${team}`,games:venG.slice(-10).reverse(),streakLen:venS.lossStreak});
-
-      // Home/Away
-      const haG = allGames.filter(r => (r.t1===team && r.ha1==='H') || (r.t2===team && r.ha2==='H'));
-      const haS = activeTeamStreak(haG, team);
-      if (haS.winStreak >= 5) result.push({type:'streak',name:team,stat:haS.winStreak,label:'Win Streak',context:'Home',team,id:`ws_ha_${team}`,games:haG.slice(-10).reverse(),streakLen:haS.winStreak});
-      if (haS.lossStreak >= 5) result.push({type:'streak',name:team,stat:haS.lossStreak,label:'Loss Streak',context:'Home',team,id:`ls_ha_${team}`,games:haG.slice(-10).reverse(),streakLen:haS.lossStreak});
-
-      const awG = allGames.filter(r => (r.t1===team && r.ha1==='A') || (r.t2===team && r.ha2==='A'));
-      const awS = activeTeamStreak(awG, team);
-      if (awS.winStreak >= 5) result.push({type:'streak',name:team,stat:awS.winStreak,label:'Win Streak',context:'Away',team,id:`ws_aw_${team}`,games:awG.slice(-10).reverse(),streakLen:awS.winStreak});
-      if (awS.lossStreak >= 5) result.push({type:'streak',name:team,stat:awS.lossStreak,label:'Loss Streak',context:'Away',team,id:`ls_aw_${team}`,games:awG.slice(-10).reverse(),streakLen:awS.lossStreak});
-
-      // Line covers/misses streaks (3+)
-      const lineS = activeLineStreak(allGames, team);
-      if (lineS.coversStreak >= 3) result.push({type:'streak',subType:'line',name:team,stat:lineS.coversStreak,label:'Covers Line',context:'All Games',team,id:`cl_all_${team}`,games:lineS.games.slice(-10).reverse(),streakLen:lineS.coversStreak});
-      if (lineS.missStreak >= 3) result.push({type:'streak',subType:'line',name:team,stat:lineS.missStreak,label:'Line Failed',context:'All Games',team,id:`ml_all_${team}`,games:lineS.games.slice(-10).reverse(),streakLen:lineS.missStreak});
-
-      // H2H line streaks
-      const h2hLineS = activeLineStreak(h2hG, team);
-      if (h2hLineS.coversStreak >= 3) result.push({type:'streak',subType:'line',name:team,stat:h2hLineS.coversStreak,label:'Covers Line',context:`H2H vs ${abbr(oppKey)}`,team,id:`cl_h2h_${team}`,games:h2hLineS.games.slice(-10).reverse(),streakLen:h2hLineS.coversStreak});
-      if (h2hLineS.missStreak >= 3) result.push({type:'streak',subType:'line',name:team,stat:h2hLineS.missStreak,label:'Line Failed',context:`H2H vs ${abbr(oppKey)}`,team,id:`ml_h2h_${team}`,games:h2hLineS.games.slice(-10).reverse(),streakLen:h2hLineS.missStreak});
-
-      // Total points over/under streaks (3+)
-      const totalS = activeTotalStreak(allGames);
-      if (totalS.overStreak >= 3) result.push({type:'streak',subType:'total',name:team,stat:totalS.overStreak,label:'Overs',context:'All Games',team,id:`ov_all_${team}`,games:totalS.games.slice(-10).reverse(),streakLen:totalS.overStreak});
-      if (totalS.underStreak >= 3) result.push({type:'streak',subType:'total',name:team,stat:totalS.underStreak,label:'Unders',context:'All Games',team,id:`un_all_${team}`,games:totalS.games.slice(-10).reverse(),streakLen:totalS.underStreak});
-
-      // H2H total streaks
-      const h2hTotalS = activeTotalStreak(h2hG);
-      if (h2hTotalS.overStreak >= 3) result.push({type:'streak',subType:'total',name:team,stat:h2hTotalS.overStreak,label:'Overs',context:`H2H vs ${abbr(oppKey)}`,team,id:`ov_h2h_${team}`,games:h2hTotalS.games.slice(-10).reverse(),streakLen:h2hTotalS.overStreak});
-      if (h2hTotalS.underStreak >= 3) result.push({type:'streak',subType:'total',name:team,stat:h2hTotalS.underStreak,label:'Unders',context:`H2H vs ${abbr(oppKey)}`,team,id:`un_h2h_${team}`,games:h2hTotalS.games.slice(-10).reverse(),streakLen:h2hTotalS.underStreak});
+        // Total points (H2H: home team only)
+        if(game.ph>0&&(!h2h||isHomeTm)){
+          var tg=ctx.g.filter(function(x){return x.ph>0;});
+          if(tg.length>=3){
+            var ov=bestXY(tg,function(x){return(x.s1+x.s2)>x.ph;},3);
+            if(ov){
+              var d5=ov.pf?'The last '+ov.x+' '+team+' '+ctx.l+' have gone over '+game.ph+' points':ov.x+' of the last '+ov.y+' '+team+' '+ctx.l+' have gone over '+game.ph+' points';
+              all.push({tp:'team',nm:team,tm:team,x:ov.x,y:ov.y,pf:ov.pf,mg:'totalPts',ck:ctx.k,cg:ctx.gr,lb:'Total Pts',st:'over',desc:d5,odds:teamOdds,gs:tg.slice(0,10),id:'to_'+ctx.k+'_'+team});
+            }
+            var un=bestXY(tg,function(x){return(x.s1+x.s2)<=x.ph;},3);
+            if(un){
+              var d6=un.pf?'The last '+un.x+' '+team+' '+ctx.l+' have gone under '+game.ph+' points':un.x+' of the last '+un.y+' '+team+' '+ctx.l+' have gone under '+game.ph+' points';
+              all.push({tp:'team',nm:team,tm:team,x:un.x,y:un.y,pf:un.pf,mg:'totalPts',ck:ctx.k,cg:ctx.gr,lb:'Total Pts',st:'under',desc:d6,odds:teamOdds,gs:tg.slice(0,10),id:'tu_'+ctx.k+'_'+team});
+            }
+          }
+        }
+      });
     });
 
-    // Sort: longest streaks first
-    result.sort((a, b) => b.stat - a.stat);
+    // ===================== DEDUP: best per entity+marketGroup =====================
+    var best={};
+    all.forEach(function(t){
+      var key=t.tp+'|'+t.nm+'|'+t.mg;
+      var tier=(t.cg==='A'?0:2)+(t.pf?0:1);
+      var ex=best[key];
+      if(!ex||tier<ex._tier||(tier===ex._tier&&t.x>ex.x)){
+        best[key]=Object.assign({},t,{_tier:tier});
+      }
+    });
+    var deduped=Object.values(best);
+
+    // Sort: perfect first, then by x desc
+    deduped.sort(function(a,b){
+      if(a.pf!==b.pf)return a.pf?-1:1;
+      return b.x-a.x;
+    });
+
     // Filter by mode
-    if (mode === 'tryscorer') return result.filter(t => t.type === 'tryscorer');
-    if (mode === 'team') return result.filter(t => t.type === 'streak');
-    return result;
-  }, [game, mode]);
+    if(mode==='tryscorer')return deduped.filter(function(t){return t.tp==='player';});
+    if(mode==='team')return deduped.filter(function(t){return t.tp==='team';});
+    return deduped;
+  },[game,mode]);
 
-  if (tiles.length === 0) return null;
+  if(tiles.length===0)return null;
 
-  const selectedData = tiles.find(t => t.id === selectedTile);
-
-  return (
+  return(
     <div className="sec">
       <div className="stit"><span>🔥 Streaks & Trends</span></div>
       <div style={{display:'flex',flexWrap:'nowrap',gap:8,overflowX:'auto',paddingBottom:6,WebkitOverflowScrolling:'touch',alignItems:'stretch',marginTop:6}}>
-        {tiles.map(tile => {
-          const isExp = selectedTile === tile.id;
-          const isTeam = tile.type === 'streak';
-          const imgSrc = isTeam ? clubLogo(tile.team) : playerImg(tile.name, tile.team);
-          const tCol = displayCol(tile.team);
-          const logoBg = tile.team === 'Hull FC' ? '#000' : (tCol + '22');
-          return (
-            <div key={tile.id} style={{background:'var(--bg2)',border:'1px solid '+(isExp?tCol:'var(--acc)'),borderRadius:12,cursor:'pointer',minWidth:200,maxWidth:300,flex:'0 0 auto',transition:'all 0.2s',overflow:'hidden'}} onClick={() => {if(!isTeam && tile.name){onPlayerClick&&onPlayerClick({player:tile.name,teamKey:tile.team,oppKey:game.t1===tile.team?game.t2:game.t1,pos:''});}else{setSelectedTile(isExp?null:tile.id);}}}>
-              <div style={{display:'flex',overflow:'hidden'}}>
-                {imgSrc?<img src={imgSrc} style={{width:48,height:'100%',objectFit:isTeam?'contain':'cover',flexShrink:0,borderRight:'2px solid '+tCol,background:isTeam?logoBg:tCol+'22',padding:isTeam?'6px':0,...logoStyle(isTeam?tile.team:'')}} onError={(e)=>{const fb=clubLogo(tile.team);if(fb){e.target.src=fb;e.target.style.objectFit='contain';e.target.style.padding='6px';e.target.style.background=tile.team==='Hull FC'?'#000':(tCol+'22');Object.assign(e.target.style,logoStyle(tile.team));}else e.target.style.display='none';}}/>:null}
-                <div style={{padding:10,flex:1,minWidth:0,background:tCol+'22'}}>
-                  <div style={{display:'flex',alignItems:'center',gap:5,flexWrap:'wrap'}}>
-                    <span style={{fontSize:14,color:'var(--acc)'}}>🔥{tile.stat}</span>
-                    <span style={{fontSize:10}}><TB t={tile.team}/></span>
-                    {!isTeam?<span style={{fontSize:12,fontWeight:700,color:'var(--t1)'}}>{tile.name}</span>:null}
+        {tiles.map(function(tile){
+          var isExp=selectedTile===tile.id;
+          var isTeam=tile.tp==='team';
+          var imgSrc=isTeam?clubLogo(tile.tm):playerImg(tile.nm,tile.tm);
+          var tCol=displayCol(tile.tm);
+          var logoBg=tile.tm==='Hull FC'?'#000':(tCol+'22');
+          return(
+            <div key={tile.id} style={{background:'var(--bg2)',border:'1px solid '+(isExp?tCol:'var(--acc2)'),borderRadius:12,cursor:'pointer',minWidth:isTeam?200:160,maxWidth:isTeam?300:220,flex:'0 0 auto',transition:'all 0.2s',overflow:'hidden'}} onClick={function(){
+              if(!isTeam&&tile.nm){
+                onPlayerClick&&onPlayerClick({player:tile.nm,teamKey:tile.tm,oppKey:game.t1===tile.tm?game.t2:game.t1,pos:tile.pos||''});
+              }else{
+                setSelectedTile(isExp?null:tile.id);
+              }
+            }}>
+              <div style={{display:'flex',alignItems:'stretch',overflow:'hidden'}}>
+                {imgSrc?<div style={{width:48,flexShrink:0,background:isTeam?logoBg:tCol,borderRight:'2px solid '+tCol,overflow:'hidden'}}><img src={imgSrc} style={{width:'100%',height:'100%',objectFit:isTeam?'contain':'cover',display:'block',...(isTeam?Object.assign({padding:6},logoStyle(tile.tm)):{}),}} onError={function(e){var fb=clubLogo(tile.tm);if(fb){e.target.src=fb;e.target.style.objectFit='contain';e.target.style.padding='6px';e.target.parentElement.style.background=tile.tm==='Hull FC'?'#000':(tCol+'22');Object.assign(e.target.style,logoStyle(tile.tm));}else e.target.parentElement.style.display='none';}}/></div>:null}
+                <div style={{padding:'8px 10px',flex:1,minWidth:0,background:tCol+'22',display:'flex',flexDirection:'column',justifyContent:'space-between'}}>
+                  <div>
+                    <div style={{display:'flex',alignItems:'center',gap:4,flexWrap:'wrap'}}>
+                      {tile.pf&&<span style={{fontSize:13}}>🔥</span>}
+                      <span style={{fontSize:10}}><TB t={tile.tm}/></span>
+                      <span style={{fontSize:12,fontWeight:700,color:'var(--t1)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{tile.nm}</span>
+                    </div>
+                    <div style={{display:'inline-block',background:'var(--acc)',color:'#000',fontSize:9,fontWeight:700,padding:'1px 6px',borderRadius:4,textTransform:'uppercase',letterSpacing:.5,marginTop:3}}>{tile.lb}</div>
+                    <div style={{fontSize:11,color:'rgba(255,255,255,0.85)',marginTop:3,display:'-webkit-box',WebkitLineClamp:isTeam?3:2,WebkitBoxOrient:'vertical',overflow:'hidden'}}>{tile.desc}</div>
                   </div>
-                  <div style={{display:'inline-block',background:'var(--acc)',color:'#000',fontSize:9,fontWeight:700,padding:'1px 6px',borderRadius:4,textTransform:'uppercase',letterSpacing:.5,marginTop:3}}>{tile.label}</div>
-                  <div style={{fontSize:11,color:'rgba(255,255,255,0.85)',marginTop:3,display:'-webkit-box',WebkitLineClamp:3,WebkitBoxOrient:'vertical',overflow:'hidden'}}>{tile.context}</div>
-                  {tile.odds && <div style={{fontSize:10,color:'#00ffaa',fontWeight:700,marginTop:3}}>${tile.odds.toFixed(2)}</div>}
+                  {tile.odds&&<div style={{fontSize:10,color:'#00ffaa',fontWeight:700,marginTop:3}}>${tile.odds.toFixed(2)}</div>}
                 </div>
               </div>
-              {isExp && tile.games && (
-                <div onClick={e=>e.stopPropagation()} style={{padding:'0 10px 10px',maxHeight:140,overflowY:'auto',background:'var(--bg2)',borderRadius:'0 0 8px 8px'}}>
-                  {isTeam && tile.subType === 'line' ? (
+              {isExp&&isTeam&&tile.gs&&(
+                <div onClick={function(e){e.stopPropagation();}} style={{padding:'0 10px 10px',maxHeight:140,overflowY:'auto',background:'var(--bg2)',borderRadius:'0 0 8px 8px'}}>
+                  {tile.st==='cover'||tile.st==='fail'?(
                     <table className="glt" style={{fontSize:10}}>
                       <thead><tr><th style={{color:'#00d4a0',textAlign:'center'}}>COMP</th><th style={{color:'#00d4a0',textAlign:'center'}}>YR</th><th style={{color:'#00d4a0',textAlign:'center'}}>RD</th><th style={{color:'#00d4a0',textAlign:'center'}}>OPP</th><th style={{color:'#00d4a0',textAlign:'center'}}>LINE</th><th style={{color:'#00d4a0',textAlign:'center'}}>MARGIN</th></tr></thead>
-                      <tbody>
-                        {tile.games.slice(0,10).map((gm,gi) => {
-                          const isT1 = gm.t1 === tile.team;
-                          const scored = isT1 ? gm.s1 : gm.s2;
-                          const conc = isT1 ? gm.s2 : gm.s1;
-                          const margin = scored - conc;
-                          const isFav = gm.fav === tile.team;
-                          const covers = isFav ? margin > gm.lh : margin > -gm.lh;
-                          const lineDisp = isFav ? '-'+gm.lh : '+'+gm.lh;
-                          return (
-                            <tr key={gi}>
-                              <td style={{color:'#00d4a0',fontWeight:600}}>{gm.comp||'SL'}</td>
-                              <td>{gm.s}</td><td>{fmtRound(gm.r)}</td>
-                              <td><TB t={isT1?gm.t2:gm.t1}/></td>
-                              <td>{lineDisp}</td>
-                              <td style={{color:covers?'#00d4a0':'#ef4444',fontWeight:700}}>{margin>0?'+':''}{margin}</td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
+                      <tbody>{tile.gs.slice(0,10).map(function(gm,gi){
+                        var isFav2=gm.fav===tile.tm;var lineD=isFav2?'-'+gm.lh:'+'+gm.lh;
+                        var cov=isFav2?gm.mg>gm.lh:gm.mg>-gm.lh;
+                        return(<tr key={gi}><td style={{color:'#00d4a0',fontWeight:600}}>{gm.comp||'SL'}</td><td>{gm.s}</td><td>{fmtRound(gm.r)}</td><td><TB t={gm.oppG}/></td><td>{lineD}</td><td style={{color:cov?'#00d4a0':'#ef4444',fontWeight:700}}>{gm.mg>0?'+':''}{gm.mg}</td></tr>);
+                      })}</tbody>
                     </table>
-                  ) : isTeam && tile.subType === 'total' ? (
+                  ):tile.st==='over'||tile.st==='under'?(
                     <table className="glt" style={{fontSize:10}}>
                       <thead><tr><th style={{color:'#00d4a0',textAlign:'center'}}>COMP</th><th style={{color:'#00d4a0',textAlign:'center'}}>YR</th><th style={{color:'#00d4a0',textAlign:'center'}}>RD</th><th style={{color:'#00d4a0',textAlign:'center'}}>OPP</th><th style={{color:'#00d4a0',textAlign:'center'}}>PTS LINE</th><th style={{color:'#00d4a0',textAlign:'center'}}>TOTAL</th></tr></thead>
-                      <tbody>
-                        {tile.games.slice(0,10).map((gm,gi) => {
-                          const isT1 = gm.t1 === tile.team;
-                          const tp = gm.s1 + gm.s2;
-                          const isOver = tp > gm.ph;
-                          return (
-                            <tr key={gi}>
-                              <td style={{color:'#00d4a0',fontWeight:600}}>{gm.comp||'SL'}</td>
-                              <td>{gm.s}</td><td>{fmtRound(gm.r)}</td>
-                              <td><TB t={isT1?gm.t2:gm.t1}/></td>
-                              <td>{gm.ph}</td>
-                              <td style={{color:isOver?'#00d4a0':'#ef4444',fontWeight:700}}>{tp}</td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
+                      <tbody>{tile.gs.slice(0,10).map(function(gm,gi){
+                        var tp2=gm.s1+gm.s2;var isO=tp2>gm.ph;
+                        return(<tr key={gi}><td style={{color:'#00d4a0',fontWeight:600}}>{gm.comp||'SL'}</td><td>{gm.s}</td><td>{fmtRound(gm.r)}</td><td><TB t={gm.oppG}/></td><td>{gm.ph}</td><td style={{color:isO?'#00d4a0':'#ef4444',fontWeight:700}}>{tp2}</td></tr>);
+                      })}</tbody>
                     </table>
-                  ) : isTeam ? (
+                  ):(
                     <table className="glt" style={{fontSize:10}}>
                       <thead><tr><th style={{color:'#00d4a0',textAlign:'center'}}>COMP</th><th style={{color:'#00d4a0',textAlign:'center'}}>YR</th><th style={{color:'#00d4a0',textAlign:'center'}}>RD</th><th style={{color:'#00d4a0',textAlign:'center'}}>OPP</th><th style={{color:'#00d4a0',textAlign:'center'}}>RESULT</th></tr></thead>
-                      <tbody>
-                        {tile.games.slice(0,10).map((gm,gi) => {
-                          const isT1 = gm.t1 === tile.team;
-                          const scored = isT1 ? gm.s1 : gm.s2;
-                          const conc = isT1 ? gm.s2 : gm.s1;
-                          const won = scored > conc;
-                          const lost = scored < conc;
-                          const res = won ? 'W' : (lost ? 'L' : 'D');
-                          const resC = res==='W'?'#00ffaa':res==='L'?'#ef4444':'#eab308';
-                          return (
-                            <tr key={gi}>
-                              <td style={{color:'#00d4a0',fontWeight:600}}>{gm.comp||'SL'}</td>
-                              <td>{gm.s}</td><td>{fmtRound(gm.r)}</td>
-                              <td><TB t={isT1?gm.t2:gm.t1}/></td>
-                              <td style={{color:resC,fontWeight:700}}>{res} {scored}-{conc}</td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
-                  ) : (
-                    <table className="glt" style={{fontSize:10}}>
-                      <thead><tr><th style={{color:'#00d4a0',textAlign:'center'}}>YR</th><th style={{color:'#00d4a0',textAlign:'center'}}>RD</th><th style={{color:'#00d4a0',textAlign:'center'}}>OPP</th><th style={{color:'#00d4a0',textAlign:'center'}}>TRIES</th></tr></thead>
-                      <tbody>
-                        {tile.games.slice(0,10).map((gm,gi) => (
-                          <tr key={gi}>
-                            <td>{gm.s||gm.dt}</td><td>{getRound(gm)||''}</td>
-                            <td><TB t={gm.o}/></td>
-                            <td>{gm.t>0?<span className="th">{gm.t}</span>:<span style={{color:'#ef4444'}}>{gm.t}</span>}</td>
-                          </tr>
-                        ))}
-                      </tbody>
+                      <tbody>{tile.gs.slice(0,10).map(function(gm,gi){
+                        var won=gm.sc>gm.cc;var lost=gm.sc<gm.cc;var res=won?'W':(lost?'L':'D');var resC=res==='W'?'#00ffaa':res==='L'?'#ef4444':'#eab308';
+                        return(<tr key={gi}><td style={{color:'#00d4a0',fontWeight:600}}>{gm.comp||'SL'}</td><td>{gm.s}</td><td>{fmtRound(gm.r)}</td><td><TB t={gm.oppG}/></td><td style={{color:resC,fontWeight:700}}>{res} {gm.sc}-{gm.cc}</td></tr>);
+                      })}</tbody>
                     </table>
                   )}
                 </div>
@@ -9322,12 +9294,13 @@ function TopMarkets({game, mode, onPlayerClick}) {
   );
 }
 
+
 function App() {
   const [gIdx, setGIdx] = useState(0);
   const [tab, setTab] = useState('tryscorers');
   const [fieldPeriod, setFieldPeriod] = useState('season');
   const [fieldTryType, setFieldTryType] = useState('all');
-  const [fieldSwapped, setFieldSwapped] = useState(false);
+  const [fieldAttack, setFieldAttack] = useState(null);
   const [srMode, setSrMode] = useState('all');
   const [srPeriod, setSrPeriod] = useState('last10');
   const [srTryTime, setSrTryTime] = useState('all');
@@ -9421,6 +9394,16 @@ function App() {
             <div className="sec">
               <div className="stit"><span>Try Scoring Zones</span></div>
               <div className="cr left">
+                <div className="cl">Attack</div>
+                <div className="tg">
+                  {[game.t1, game.t2].map(t => {
+                    const sel = fieldAttack === t;
+                    const col = displayCol(t);
+                    return <button key={t} className={"tb"+(sel?" on":"")} style={sel?{background:col,color:'#fff',borderColor:col}:{}} onClick={() => setFieldAttack(sel?null:t)}>{t}</button>;
+                  })}
+                </div>
+              </div>
+              <div className="cr left">
                 <div className="cl">Period</div>
                 <div className="tg">
                   {[['season','Season'],['last10','Last 10'],['last5','Last 5']].map(([v,l]) => (
@@ -9435,9 +9418,8 @@ function App() {
                     <button key={v} className={"tb"+(fieldTryType===v?" on":"")} onClick={() => setFieldTryType(v)}>{l}</button>
                   ))}
                 </div>
-                <button className={"swb"+(fieldSwapped?" on":"")} onClick={() => setFieldSwapped(!fieldSwapped)}>Swap A/D</button>
               </div>
-              <Field tA={game.t1} tB={game.t2} period={fieldPeriod} tryType={fieldTryType} swapped={fieldSwapped}/>
+              <Field tA={fieldAttack||game.t1} tB={fieldAttack?(fieldAttack===game.t1?game.t2:game.t1):game.t2} period={fieldPeriod} tryType={fieldTryType} swapped={fieldAttack===game.t2}/>
             </div>
 
             <div className="sec">
@@ -9470,7 +9452,7 @@ function App() {
       </div>
 
       <div className="ftr">RSG Super League Dashboard — Elim Final 2026 — For Patreon Members Only</div>
-      {appPpPlayer && <PlayerProfile player={{pl:appPpPlayer.player, pos:appPpPlayer.pos}} teamKey={appPpPlayer.teamKey} oppKey={appPpPlayer.oppKey} game={game} initMode={'all'} onClose={()=>setAppPpPlayer(null)}/>}
+      {appPpPlayer && <PlayerProfile player={{pl:appPpPlayer.player, pos:appPpPlayer.pos}} teamKey={appPpPlayer.teamKey} oppKey={appPpPlayer.oppKey} game={game} initMode={srMode} initPeriod={srPeriod} initTime={srTryTime} onClose={()=>setAppPpPlayer(null)}/>}
     </div>
   );
 }
