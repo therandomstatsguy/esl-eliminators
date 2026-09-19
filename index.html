@@ -7838,7 +7838,7 @@ function Field({tA,tB,period,tryType,swapped}){
     return r.filter(x=>matchTT(x,tryType));
   },[period,tryType]);
 
-  const aKey=swapped?tB:tA, bKey=swapped?tA:tB;
+  const aKey=tA, bKey=tB;
   const aRecs=useMemo(()=>recs.filter(x=>x.tm===aKey),[recs,aKey]);
   const bRecs=useMemo(()=>recs.filter(x=>x.op===bKey),[recs,bKey]);
 
@@ -9399,7 +9399,8 @@ function App() {
                   {[game.t1, game.t2].map(t => {
                     const sel = fieldAttack === t;
                     const col = displayCol(t);
-                    return <button key={t} className={"tb"+(sel?" on":"")} style={sel?{background:col,color:'#fff',borderColor:col}:{}} onClick={() => setFieldAttack(sel?null:t)}>{t}</button>;
+                    const isLight = (function(c){var hex=c.replace('#','');if(hex.length===3)hex=hex[0]+hex[0]+hex[1]+hex[1]+hex[2]+hex[2];var r=parseInt(hex.substr(0,2),16),g=parseInt(hex.substr(2,2),16),b=parseInt(hex.substr(4,2),16);return(r*299+g*587+b*114)/1000>180;})(col);
+                    return <button key={t} className={"tb"+(sel?" on":"")} style={sel?{background:col,color:isLight?'#000':'#fff',borderColor:col}:{}} onClick={() => setFieldAttack(sel?null:t)}>{t}</button>;
                   })}
                 </div>
               </div>
